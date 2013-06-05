@@ -9,7 +9,7 @@ def remove_BOM(str)
   str.force_encoding('utf-8').gsub("\xEF\xBB\xBF".force_encoding('utf-8'), '')
 end
 
-LaNacionArticle = Struct.new(:url, :title, :body) do
+class Struct
   def to_json(*a)
     self.members.reduce({}) { |memo, m|
       memo[m] = self[m]
@@ -17,6 +17,9 @@ LaNacionArticle = Struct.new(:url, :title, :body) do
     }.to_json(*a)
   end
 end
+
+LaNacionArticle = Struct.new(:url, :title, :body, :tagged_people)
+LaNacionTaggedPerson = Struct.new(:name, :url, :photo_url)
 
 class LaNacionTagScraper
 
@@ -56,8 +59,12 @@ class LaNacionTagScraper
 
     LaNacionArticle.new(url,
                         page.search('article h1').text,
-                        page.search('article section#cuerpo p').text)
-
+                        page.search('article section#cuerpo p').map(&:text).join('\n\n'),
+                        page.search('//article[@itemtype="http://schema.org/Person"]').map { |e|
+                          LaNacionTaggedPerson.new(e.search('span[@itemprop="name"]').text,
+                                                   'http://' + HOST + e.search('a[@itemprop="url"]/@href').to_s,
+                                                   e.search('span[@itemprop="image"]').text)
+                        })
   end
 end
 
@@ -69,6 +76,8 @@ if __FILE__ == $0
     named_entities = FreeLing::Analyzer.new(article.body, :server_host => 'localhost:50005')
       .tokens
       .select { |t| t.tag.start_with?('NP') && t.prob > 0.9 }
+
+    puts article.tagged_people.inspect
 
     puts named_entities.map(&:form).uniq.inspect
 

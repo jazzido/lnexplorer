@@ -10,8 +10,8 @@ GEM
     debugger-ruby_core_source (1.2.2)
     domain_name (0.5.11)
       unf (>= 0.0.5, < 1.0.0)
-    freeling-analyzer (0.1.0)
-      hashie
+    freeling-analyzer (0.1.1)
+      hashie (~> 2.0.5)
     hashie (2.0.5)
     http-cookie (1.0.1)
       domain_name (~> 0.5)
