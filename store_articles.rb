@@ -12,6 +12,7 @@ class ArticleStore
     @db = MongoClient.new('localhost', 27017).db('lnexplorer')
     @articles = @db.collection('articles')
     @entities = @db.collection('entities')
+    @tags     = @db.collection('tags')
   end
 
   def store_article(article)
@@ -23,15 +24,24 @@ class ArticleStore
     end
 
     tp.each { |p|
-      @entities.insert p unless @entities.find('_id' => p[:_id]).count == 1
+      @entities.insert p unless @entities.count(:query => { :_id => p[:_id]}) == 1
     }
 
-    a_h = article.to_h
-    a_h.delete(:tagged_people); a_h.delete(:detected_entities)
-    a_h[:entities] = tp.map { |p| BSON::DBRef.new('entities', p[:_id]) }
-    a_h[:date] = datetime_to_mongo(a_h[:date])
-    a_h[:_id] = a_h[:url]
-    @articles.insert(a_h) unless @articles.find('_id' => a_h[:_id]).count == 1
+    if @articles.count(:query => { :_id => a_h[:_id] }) == 0
+      a_h = article.to_h
+      a_h.delete(:tagged_people); a_h.delete(:detected_entities)
+      a_h[:entities] = tp.map { |p| BSON::DBRef.new('entities', p[:_id]) }
+      a_h[:date] = datetime_to_mongo(a_h[:date])
+      a_h[:_id] = a_h[:url]
+      a_h[:tags] = []
+      @articles.insert(a_h)
+    end
+    a = @articles.find({ :_id => article.url })
+
+    # a_h[:tags][0][:_id] = a[:tag].delete(:id)
+    # @tags.insert(a_h[:tags].first) unless @tags.count(:query => {:_id => a_h[:tags][0][:_id] }) == 1
+    # a_h[:]
+
   end
 
 end

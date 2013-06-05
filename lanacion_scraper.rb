@@ -35,7 +35,7 @@ class Struct
   end
 end
 
-LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities)
+LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities, :tag)
 LaNacionTaggedPerson = Struct.new(:name, :url, :photo_url)
 DetectedEntity = Struct.new(:name, :lemma, :eagle_tag)
 
@@ -56,6 +56,10 @@ class LaNacionTagScraper
 
     @logger.debug("Scraping tag: #{tag}")
 
+    # get tag title
+
+    tag_title = @agent.get('http://' + HOST + '/' + tag).search('h1').text
+
     Enumerator.new do |yielder|
       while true
         page = @agent.get ACUMULADOS_LIST_TMPL % [page_num, tag_id]
@@ -64,7 +68,9 @@ class LaNacionTagScraper
         break if articles['notas'].empty?
 
         articles['notas'].each do |n|
-          yielder.yield scrape_article(n['nota']['url'])
+          article = scrape_article(n['nota']['url'])
+          article.tags = [{ :id => tag, :title => tag_title }]
+          yielder.yield article
         end
         page_num += 1
       end
