@@ -1,7 +1,9 @@
-require 'mechanize'
+# -*- coding: utf-8 -*-
 require 'json'
 require 'logger'
-require 'ostruct'
+require 'date'
+
+require 'mechanize'
 require 'freeling-analyzer'
 
 # remove the byte order mark
@@ -9,17 +11,33 @@ def remove_BOM(str)
   str.force_encoding('utf-8').gsub("\xEF\xBB\xBF".force_encoding('utf-8'), '')
 end
 
+MONTHS_TRANSLATED = {"enero"=>"january", "febrero"=>"february", "marzo"=>"march", "abril"=>"april", "mayo"=>"may", "junio"=>"june", "julio"=>"july", "agosto"=>"august", "septiembre"=>"september", "octubre"=>"october", "noviembre"=>"november", "diciembre"=>"december"}
+SPANISH_MONTHS_RE = Regexp.new(MONTHS_TRANSLATED.keys.compact.join('|'))
+SPANISH_DAYS_RE   = Regexp.new("lunes|martes|miércoles|jueves|viernes|sábado|domingo")
+
+def parse_spanish_date(str)
+  DateTime.parse(str.downcase.gsub(' de ', ' ')
+                                .gsub(SPANISH_MONTHS_RE, MONTHS_TRANSLATED)
+                                .gsub(SPANISH_DAYS_RE, '')
+                                .strip)
+end
+
 class Struct
-  def to_json(*a)
+  def to_h
     self.members.reduce({}) { |memo, m|
       memo[m] = self[m]
       memo
-    }.to_json(*a)
+    }.merge({:_type => self.class.to_s })
+  end
+
+  def to_json(*a)
+     to_h.to_json(*a)
   end
 end
 
-LaNacionArticle = Struct.new(:url, :title, :body, :tagged_people)
+LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities)
 LaNacionTaggedPerson = Struct.new(:name, :url, :photo_url)
+DetectedEntity = Struct.new(:name, :lemma, :eagle_tag)
 
 class LaNacionTagScraper
 
@@ -36,7 +54,7 @@ class LaNacionTagScraper
     tag_id = /.+-t(\d+)/.match(tag)[1]
     page_num = 1
 
-    @logger.debug('Scraping tag: #{tag}')
+    @logger.debug("Scraping tag: #{tag}")
 
     Enumerator.new do |yielder|
       while true
@@ -60,6 +78,7 @@ class LaNacionTagScraper
     LaNacionArticle.new(url,
                         page.search('article h1').text,
                         page.search('article section#cuerpo p').map(&:text).join('\n\n'),
+                        parse_spanish_date(page.search('//span[@itemprop="datePublished"]').text),
                         page.search('//article[@itemtype="http://schema.org/Person"]').map { |e|
                           LaNacionTaggedPerson.new(e.search('span[@itemprop="name"]').text,
                                                    'http://' + HOST + e.search('a[@itemprop="url"]/@href').to_s,
@@ -71,13 +90,11 @@ end
 if __FILE__ == $0
   s = LaNacionTagScraper.new
   s.tag_articles(ARGV.shift).each do |article|
-#    require 'debugger'; debugger
-#    puts article.to_json
     named_entities = FreeLing::Analyzer.new(article.body, :server_host => 'localhost:50005')
       .tokens
       .select { |t| t.tag.start_with?('NP') && t.prob > 0.9 }
 
-    puts article.tagged_people.inspect
+    puts article.inspect
 
     puts named_entities.map(&:form).uniq.inspect
 
