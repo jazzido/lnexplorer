@@ -27,7 +27,7 @@ class ArticleStore
       @entities.insert p unless @entities.count(:query => { :_id => p[:_id]}) == 1
     }
 
-    if @articles.count(:query => { :_id => a_h[:_id] }) == 0
+    if @articles.count(:query => { :_id => article[:url] }) == 0
       a_h = article.to_h
       a_h.delete(:tagged_people); a_h.delete(:detected_entities)
       a_h[:entities] = tp.map { |p| BSON::DBRef.new('entities', p[:_id]) }
@@ -36,12 +36,26 @@ class ArticleStore
       a_h[:tags] = []
       @articles.insert(a_h)
     end
-    a = @articles.find({ :_id => article.url })
 
-    # a_h[:tags][0][:_id] = a[:tag].delete(:id)
-    # @tags.insert(a_h[:tags].first) unless @tags.count(:query => {:_id => a_h[:tags][0][:_id] }) == 1
-    # a_h[:]
+    # update tags if needed
+    a = @articles.find_one( :_id => article.url )
+    unless a['tags'].any? { |t| t.object_id == article[:tags].first[:id] }
+      # tag exists?
+      t = @tags.find_one(:_id => article[:tags].first[:id])
+      if t.nil?
+        at = article[:tags].first
+        at[:_id] = at.delete(:id)
+        @tags.insert(at)
+        t = @tags.find_one('_id' => at[:_id])
+      end
 
+      @articles.update({ '_id' => a['_id'] },
+                       {
+                         '$set' => {
+                           'tags' => a['tags'] + [BSON::DBRef.new('tags', t['_id'])]
+                         }
+                       })
+    end
   end
 
 end

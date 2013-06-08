@@ -35,7 +35,7 @@ class Struct
   end
 end
 
-LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities, :tag)
+LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities, :tags)
 LaNacionTaggedPerson = Struct.new(:name, :url, :photo_url)
 DetectedEntity = Struct.new(:name, :lemma, :eagle_tag)
 
@@ -68,8 +68,13 @@ class LaNacionTagScraper
         break if articles['notas'].empty?
 
         articles['notas'].each do |n|
-          article = scrape_article(n['nota']['url'])
-          article.tags = [{ :id => tag, :title => tag_title }]
+          begin
+            article = scrape_article(n['nota']['url'])
+          rescue
+            # could not scrape, I don't care
+            next
+          end
+          article[:tags] = [{ :id => tag, :title => tag_title }]
           yielder.yield article
         end
         page_num += 1

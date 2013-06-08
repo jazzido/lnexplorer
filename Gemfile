@@ -4,4 +4,6 @@ gem 'mechanize'
 gem 'freeling-analyzer'
 gem 'bson_ext'
 gem 'mongo'
-
+gem 'cuba'
+gem 'rack'
+gem 'tilt'

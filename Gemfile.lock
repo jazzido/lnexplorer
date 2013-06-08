@@ -5,13 +5,15 @@ GEM
     bson_ext (1.8.6)
       bson (~> 1.8.6)
     columnize (0.3.6)
+    cuba (3.1.0)
+      rack
     debugger (1.6.0)
       columnize (>= 0.3.1)
       debugger-linecache (~> 1.2.0)
       debugger-ruby_core_source (~> 1.2.1)
     debugger-linecache (1.2.0)
     debugger-ruby_core_source (1.2.2)
-    domain_name (0.5.11)
+    domain_name (0.5.12)
       unf (>= 0.0.5, < 1.0.0)
     freeling-analyzer (0.1.1)
       hashie (~> 2.0.5)
@@ -32,8 +34,10 @@ GEM
       bson (~> 1.8.6)
     net-http-digest_auth (1.3)
     net-http-persistent (2.8)
-    nokogiri (1.5.9)
+    nokogiri (1.5.10)
     ntlm-http (0.1.1)
+    rack (1.5.2)
+    tilt (1.4.1)
     unf (0.1.1)
       unf_ext
     unf_ext (0.0.6)
@@ -44,7 +48,10 @@ PLATFORMS
 
 DEPENDENCIES
   bson_ext
+  cuba
   debugger
   freeling-analyzer
   mechanize
   mongo
+  rack
+  tilt
