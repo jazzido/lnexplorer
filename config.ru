@@ -1,2 +1,2 @@
 require './web/lnexplorer.rb'
-run Cuba
+run LNExplorer
