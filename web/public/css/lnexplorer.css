@@ -29,6 +29,10 @@ ul {
     padding: 2px;
   }
 
+  ul li:hover {
+    cursor: pointer;
+  }
+
   ul li img {
     width: 30px;
   }
@@ -41,6 +45,7 @@ div#entitieslinechart {
 
 .disabled {
   opacity: 0.5;
+  stroke-opacity: 0.5;
 }
 
 
@@ -55,3 +60,7 @@ div#entitieslinechart {
             font-size: 10px;
         }
         .axis path { stroke-width: 1px; stroke: #888; }
+
+path.shadow {
+  filter: url(#drop-shadow);
+}

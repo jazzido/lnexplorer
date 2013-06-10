@@ -40,13 +40,25 @@ API.define do
 
       hist = ARTICLES.group(
                             :keyf => "function(doc) {
-            return { date: new Date(doc.date.getFullYear(), doc.date.getMonth(), doc.date.getDate()) };
-        }",
+                                        return { date: new Date(doc.date.getFullYear(), doc.date.getMonth(), doc.date.getDate()) };
+                                      }",
                             :initial => { 'count' => 0 },
                             :cond => cond,
                             :reduce => "function(obj, prev) { prev.count++; } ")
+                     .sort_by { |d| d['date'] }
+                     .reduce([]) { |r, value| # fill gaps
+                       unless r.size == 0
+                         x = value['date'] - 60*60*24
+                         y = r.last['date']
+                         while y != x do
+                           r << { 'date' => x, 'count' => 0 }
+                           x -= 60*60*24
+                         end
+                       end
+                       r << value
+                     }
 
-      res.write hist.sort_by { |d| d['date'] }.to_json
+      res.write hist.to_json
     end
 
     on 'entities' do
@@ -67,14 +79,15 @@ API.define do
                    'from' => { '$min' => '$date' },
                    'to' => { '$max' => '$date' },
                  }
-               }]
+               },
+               { '$sort' => { 'count' => 1 } }
+              ]
 
        if cond['date'] != {}
-         query.insert(2, { '$match' => cond})
+         query.insert(1, { '$match' => cond})
        end
 
       entities = ARTICLES.aggregate(query)
-        .sort_by { |e| e['count'] }
         .map { |e| e.merge('entity' => DB.dereference(e['_id'])) }.reverse!
       res.write entities.to_json
     end

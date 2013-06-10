@@ -53,7 +53,7 @@ $(function() {
                     }
                 }),
             }));
-            this.dateCounts.url = "api/entities/" + this.attributes.entity._id + "/date_counts";
+            this.dateCounts.url = "api/entities/" + this.attributes.entity._id + "/date_counts?from=2012-01-01";
         },
         // fuck you JSON, make up your mind about date formats already.
         parse: function(response) {
@@ -76,13 +76,17 @@ $(function() {
     var LineChartView = Backbone.View.extend({
         tagName: 'div',
         width: 900,
-        height: 250,
+        height: 350,
 
         createSVG: function() {
+
             this.linechart = d3.select(this.tagName + '#' + this.id).append('svg')
-                .attr('width', '90%')
-                .attr('height', '90%')
+                .attr('width', '100%')
+                .attr('height', '100%')
                 .attr('viewBox', '0 0 ' + this.width + ' ' + this.height);
+
+            // filters go in defs element
+            var defs = this.linechart.append("defs");
 
             this.linechart_x = d3.time.scale()
             .domain(d3.extent(_.flatten(this.collection.models.map(function(d) {
@@ -102,7 +106,7 @@ $(function() {
 //                                               d3.max(this.collection.models, function(d) { return d.get('count'); })]
                                                100]
                                              )
-                                      .range([this.height,0]);
+                                      .range([this.height-20,0]);
 
             var linechart_yaxis = d3.svg.axis()
                                         .scale(this.linechart_y)
@@ -119,7 +123,6 @@ $(function() {
                                    }, this));
 
             this.linechart_line = d3.svg.area()
-                                        .interpolate('monotone')
                                         .x(_.bind(function(d) {
                                             return this.linechart_x(d.get('date'));
                                         }, this))
@@ -138,8 +141,6 @@ $(function() {
                 .attr('transform', 'translate(20,0)')
                 .call(linechart_yaxis);
 
-
-
             this.linechart.append("g")
                           .attr("class", "x brush")
                           .call(this.brush)
@@ -153,8 +154,16 @@ $(function() {
                 .append('path')
                 .datum(tagView.model.dateCounts.models)
                 .attr('d', this.linechart_line)
+                .attr('id', 'line-' + tagView.$el.attr('id'))
+                .attr('class', 'tag-line')
                 .style('fill', 'none')
                 .style('stroke', tagView.options.color);
+            tagView.on('mouseover', _.bind(function(d) {
+               $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('visibility', 'hidden');
+            },this));
+            tagView.on('mouseout', _.bind(function(d) {
+                $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('visibility', 'visible');
+            }, this));
         },
 
         render: function() {
@@ -178,8 +187,13 @@ $(function() {
     var EntityView = Backbone.View.extend({
         tagName: 'li',
         template: _.template("<img src=\"<%= entity.photo_url.startsWith('http') ? entity.photo_url : 'http://www.lanacion.com.ar' + entity.photo_url %>\"><%= entity.name %>"),
+        initialize: function() {
+            this.$el.on('mouseover', _.bind(_.partial(this.trigger, 'mouseover'), this));
+            this.$el.on('mouseout', _.bind(_.partial(this.trigger, 'mouseout'), this));
+        },
         render: function() {
             this.$el.html(this.template(this.model.toJSON()))
+                .attr('id', 'entity-' + this.model.get('entity')._id)
                 .css('background-color', this.options.color)
                 .toggleClass('disabled', this.model.get('disabled'));
             return this;
@@ -197,7 +211,7 @@ $(function() {
                 var cscale = d3.scale.category20();
                 var ul = $('#container').prepend('<ul id="entities"></ul>');
                 Entities.each(function(t, i) {
-                    if (i > 5) t.set('disabled', true);
+                    if (i > 20) t.set('disabled', true);
                     else t.dateCounts.fetch({reset: true});
                     var v = new EntityView({model: t, color: cscale(i)});
 
