@@ -33,7 +33,7 @@ API.use JSONResponse
 API.define do
   on get do
     on 'tags/:tag_id/histogram' do |tag_id|
-
+      puts tag_id
       hist = ARTICLES.group(
                             :keyf => "function(doc) {
             return { date: new Date(doc.date.getFullYear(), doc.date.getMonth(), doc.date.getDate()) };
