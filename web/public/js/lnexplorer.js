@@ -101,11 +101,12 @@ $(function() {
                                          .tickFormat(d3.time.format('%b %Y'))
                                          .tickSize(1);
 
+            console.log(this.collection);
             this.linechart_y = d3.scale.pow()
                                       .exponent(0.6)
                                       .domain([0,
 //                                               d3.max(this.collection.models, function(d) { return d.get('count'); })]
-                                               200]
+                                               90]
                                              )
             //                                      .clamp(true)
                                       .nice()
@@ -155,7 +156,6 @@ $(function() {
         },
 
         renderTagLine: function(tagView) {
-            console.log(btoa(tagView.$el.attr('id')).replace(/=/g, ''));
             tagView.linePath = d3.select(this.tagName + '#' + this.id + ' svg')
                 .append('path')
                 .datum(tagView.model.dateCounts.models)

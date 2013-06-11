@@ -51,6 +51,7 @@ class LaNacionTagScraper
   end
 
   def entity_articles(entity)
+    return [] if entity.nil?
     entity_id = /.+-t(\d+)/.match(entity)[1]
     page_num = 1
 
