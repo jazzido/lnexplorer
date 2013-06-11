@@ -41,6 +41,7 @@ API.define do
   on get do
 
     on 'entities/:entity_id/date_counts' do |entity_id|
+      entity_id = URI.unescape entity_id
       cond = { 'entities.$id' => entity_id }
       cond['date'] = { '$gte' => Time.parse(req.params['from'])} if req.params['from']
       cond['date'] = { '$lte' => Time.parse(req.params['to'])} if req.params['to']

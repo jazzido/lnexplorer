@@ -19,7 +19,7 @@ $(function() {
                     }
                 }),
             }));
-            this.dateCounts.url = "api/tags/" + this.attributes.tag._id + "/date_counts";
+            this.dateCounts.url = "api/tags/" + encodeURIComponent(this.attributes.tag._id) + "/date_counts";
         },
         // fuck you JSON, make up your mind about date formats already.
         parse: function(response) {
@@ -53,7 +53,7 @@ $(function() {
                     }
                 }),
             }));
-            this.dateCounts.url = "api/entities/" + this.attributes.entity._id + "/date_counts?from=2011-01-01";
+            this.dateCounts.url = "api/entities/" + encodeURIComponent(this.attributes.entity._id) + "/date_counts?from=2011-01-01";
         },
         // fuck you JSON, make up your mind about date formats already.
         parse: function(response) {
@@ -155,6 +155,7 @@ $(function() {
         },
 
         renderTagLine: function(tagView) {
+            console.log(btoa(tagView.$el.attr('id')).replace(/=/g, ''));
             tagView.linePath = d3.select(this.tagName + '#' + this.id + ' svg')
                 .append('path')
                 .datum(tagView.model.dateCounts.models)
@@ -198,7 +199,7 @@ $(function() {
         },
         render: function() {
             this.$el.html(this.template(this.model.toJSON()))
-                .attr('id', 'entity-' + this.model.get('entity')._id)
+                .attr('id', 'entity-' + btoa(this.model.get('entity')._id).replace(/=/g, ''))
                 .css('background-color', this.options.color)
                 .toggleClass('disabled', this.model.get('disabled'));
             return this;
@@ -233,7 +234,6 @@ $(function() {
                 lcv.createSVG();
                 lcv.on('brush', function(f) { console.log(f)});
             }});
-
         }
 
     });

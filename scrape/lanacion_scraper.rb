@@ -4,7 +4,6 @@ require 'logger'
 require 'date'
 
 require 'mechanize'
-require 'freeling-analyzer'
 
 # remove the byte order mark
 def remove_BOM(str)
@@ -37,6 +36,7 @@ end
 
 LaNacionArticle = Struct.new(:url, :title, :body, :date, :tagged_people, :detected_entities, :tags)
 LaNacionTaggedPerson = Struct.new(:name, :url, :photo_url)
+LaNacionTag = Struct.new(:title, :id)
 DetectedEntity = Struct.new(:name, :lemma, :eagle_tag)
 
 class LaNacionTagScraper
@@ -50,6 +50,34 @@ class LaNacionTagScraper
     @logger = Logger.new(STDERR)
   end
 
+  def entity_articles(entity)
+    entity_id = /.+-t(\d+)/.match(entity)[1]
+    page_num = 1
+
+    @logger.debug("Scraping entity: #{entity}")
+
+    Enumerator.new do |yielder|
+      while true
+        page = @agent.get ACUMULADOS_LIST_TMPL % [page_num, entity_id]
+        articles = JSON.parse remove_BOM(page.body)
+
+        break if articles['notas'].empty?
+
+        articles['notas'].each do |n|
+          begin
+            article = scrape_article(n['nota']['url'])
+            article[:tags] = []
+          rescue
+            # could not scrape, I don't care
+            next
+          end
+          yielder.yield article
+        end
+        page_num += 1
+      end
+    end
+  end
+
   def tag_articles(tag)
     tag_id = /.+-t(\d+)/.match(tag)[1]
     page_num = 1
@@ -57,7 +85,6 @@ class LaNacionTagScraper
     @logger.debug("Scraping tag: #{tag}")
 
     # get tag title
-
     tag_title = @agent.get('http://' + HOST + '/' + tag).search('h1').text
 
     Enumerator.new do |yielder|
@@ -74,7 +101,7 @@ class LaNacionTagScraper
             # could not scrape, I don't care
             next
           end
-          article[:tags] = [{ :id => tag, :title => tag_title }]
+          article[:tags] = [LaNacionTag.new(tag, tag_title)]
           yielder.yield article
         end
         page_num += 1
