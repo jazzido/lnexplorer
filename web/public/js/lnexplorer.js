@@ -53,7 +53,7 @@ $(function() {
                     }
                 }),
             }));
-            this.dateCounts.url = "api/entities/" + this.attributes.entity._id + "/date_counts?from=2012-01-01";
+            this.dateCounts.url = "api/entities/" + this.attributes.entity._id + "/date_counts?from=2011-01-01";
         },
         // fuck you JSON, make up your mind about date formats already.
         parse: function(response) {
@@ -69,14 +69,14 @@ $(function() {
 
     var EntityList = Backbone.Collection.extend({
         model: Entity,
-        url: '/api/entities?from=2012-01-01',
+        url: '/api/entities?from=2011-01-01',
     });
     var Entities = new EntityList;
 
     var LineChartView = Backbone.View.extend({
         tagName: 'div',
         width: 900,
-        height: 350,
+        height: 250,
 
         createSVG: function() {
 
@@ -101,12 +101,18 @@ $(function() {
                                          .tickFormat(d3.time.format('%b %Y'))
                                          .tickSize(1);
 
-            this.linechart_y = d3.scale.linear()
+            this.linechart_y = d3.scale.pow()
+                                      .exponent(0.6)
                                       .domain([0,
 //                                               d3.max(this.collection.models, function(d) { return d.get('count'); })]
-                                               100]
+                                               200]
                                              )
+            //                                      .clamp(true)
+                                      .nice()
                                       .range([this.height-20,0]);
+
+
+
 
             var linechart_yaxis = d3.svg.axis()
                                         .scale(this.linechart_y)

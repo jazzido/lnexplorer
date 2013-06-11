@@ -8,11 +8,37 @@ end
 class ArticleStore
   include Mongo
 
+  attr_reader :articles, :entities
+
   def initialize
     @db = MongoClient.new('localhost', 27017).db('lnexplorer')
     @articles = @db.collection('articles')
     @entities = @db.collection('entities')
     @tags     = @db.collection('tags')
+  end
+
+  def find_untagged_entities(article, known_entities_hash)
+    known_entities_hash.select { |k,v| article['body'].include?(k) && \
+      !article['entities'].any? { |e| e.object_id == v['_id'] }
+    }.values
+  end
+
+  def tag_untagged_articles!
+    known = Hash[@entities.find.map { |e| e['name'] }.zip(@entities.find)]
+    known.delete(nil)
+
+    @articles.find.each { |a|
+      new = self.find_untagged_entities(a, known).map { |e|
+        BSON::DBRef.new('entities', e['_id'])
+      }
+      a['entities'] += new
+      @articles.update({ '_id' => a['_id'] },
+                       {
+                         '$set' => {
+                           'entities' => a['entities'] + new
+                         }
+                       })
+    }
   end
 
   def store_article(article)
