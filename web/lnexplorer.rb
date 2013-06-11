@@ -26,10 +26,12 @@ class JSONResponse
 end
 
 DB = if ENV['MONGOLAB_URI']
-  Mongo::MongoClient.from_uri(ENV['MONGOLAB_URI']).db('lnexplorer')
-     else
-       Mongo::MongoClient.new('localhost', 27017).db('lnexplorer')
-     end
+  mongo_uri = ENV['MONGOLAB_URI']
+  client = Mongo::MongoClient.from_uri(mongo_uri)
+  client.db(ENV['MONGOLAB_DB'])
+else
+  Mongo::MongoClient.new('localhost', 27017).db('lnexplorer')
+end
 
 ARTICLES = DB.collection 'articles'
 
