@@ -26,7 +26,7 @@ class JSONResponse
 end
 
 DB = if ENV['MONGOLAB_URI']
-  Mongo::MongoClient.from_uri ENV['MONGOLAB_URI'].db('lnexplorer')
+  Mongo::MongoClient.from_uri(ENV['MONGOLAB_URI']).db('lnexplorer')
      else
        Mongo::MongoClient.new('localhost', 27017).db('lnexplorer')
      end
