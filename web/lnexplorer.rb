@@ -25,7 +25,12 @@ class JSONResponse
   end
 end
 
-DB = Mongo::MongoClient.new('localhost', 27017).db('lnexplorer')
+DB = if ENV['MONGOLAB_URI']
+       Mongo::MongoClient.from_uri ENV['MONGOLAB_URI']
+     else
+       Mongo::MongoClient.new('localhost', 27017).db('lnexplorer')
+     end
+
 ARTICLES = DB.collection 'articles'
 
 class API < Cuba; end
@@ -57,6 +62,7 @@ API.define do
                        end
                        r << value
                      }
+                     .sort_by { |d| d['date'] }
 
       res.write hist.to_json
     end

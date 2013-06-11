@@ -122,14 +122,13 @@ $(function() {
                                                     this.brush.extent());
                                    }, this));
 
-            this.linechart_line = d3.svg.area()
-                                        .x(_.bind(function(d) {
-                                            return this.linechart_x(d.get('date'));
-                                        }, this))
-                                        .y0(this.height - 20)
-                                        .y1(_.bind(function(d) {
-                                                    return this.linechart_y(d.get('count'));
-                                                   }, this));
+            this.linechart_line = d3.svg.line()
+                .x(_.bind(function(d) {
+                    return this.linechart_x(d.get('date'));
+                }, this))
+                .y(_.bind(function(d) {
+                    return this.linechart_y(d.get('count'));
+                }, this));
 
             this.linechart.append('g')
                           .attr('class', 'axis')
@@ -159,10 +158,10 @@ $(function() {
                 .style('fill', 'none')
                 .style('stroke', tagView.options.color);
             tagView.on('mouseover', _.bind(function(d) {
-               $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('visibility', 'hidden');
+               $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('stroke-opacity', '0.1');
             },this));
             tagView.on('mouseout', _.bind(function(d) {
-                $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('visibility', 'visible');
+                $('path[id!=line-'+tagView.$el.attr('id')+'].tag-line', this.$el).css('stroke-opacity', '1');
             }, this));
         },
 
